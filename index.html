@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle of Fifths Trainer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎵</text></svg>">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0f0f13;
+      --fg:         #e8e8f0;
+      --note:       #ffffff;
+      --label:      #666;
+      --sublabel:   #555;
+      --meta:       #999;
+      --muted:      #888;
+      --pool:       #444;
+      --track:      #2a2a3a;
+      --divider:    #1e1e2a;
+      --btn-border: #2a2a3a;
+      --accent:     #7c6af7;
+      --accent-hi:  #9d8fff;
+      --accent-txt: #c0b8ff;
+      --seg-active: #3a2a6a;
+      --slice-off:  #1e1e2a;
+      --slice-on:   #3a2a6a;
+      --slice-stroke:#0f0f13;
+      --text-off:   #555;
+      --text-on:    #c0b8ff;
+    }
+
+    body.light {
+      --bg:         #f5f5f8;
+      --fg:         #1a1a2e;
+      --note:       #0f0f1a;
+      --label:      #888;
+      --sublabel:   #aaa;
+      --meta:       #777;
+      --muted:      #999;
+      --pool:       #bbb;
+      --track:      #dcdce8;
+      --divider:    #e0e0ea;
+      --btn-border: #d0d0e0;
+      --accent:     #6255d4;
+      --accent-hi:  #7c6af7;
+      --accent-txt: #5548c0;
+      --seg-active: #c5beff;
+      --slice-off:  #e8e8f0;
+      --slice-on:   #c5beff;
+      --slice-stroke:#f5f5f8;
+      --text-off:   #aaa;
+      --text-on:    #4a3cb0;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    h1 {
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--label);
+    }
+
+    #note-display {
+      font-size: clamp(3rem, 14vw, 6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--note);
+      min-width: 3ch;
+      text-align: center;
+      line-height: 1;
+      transition: opacity 0.1s ease;
+      user-select: none;
+    }
+
+    #note-display.flash { opacity: 0; }
+
+    /* Circle of fifths SVG */
+    #circle-wrap {
+      width: min(260px, 80vw);
+      aspect-ratio: 1;
+    }
+
+    .note-btn circle {
+      cursor: pointer;
+      transition: fill 0.15s, stroke 0.15s, stroke-width 0.15s;
+    }
+
+    .note-btn:hover circle { filter: brightness(1.15); }
+
+    .note-btn text {
+      pointer-events: none;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      dominant-baseline: middle;
+      text-anchor: middle;
+      transition: fill 0.15s;
+    }
+
+    /* Segmented control */
+    .segment-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .segment-control {
+      display: flex;
+      width: 100%;
+      background: var(--track);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .segment-control input[type="radio"] { display: none; }
+
+    .segment-control label {
+      flex: 1;
+      text-align: center;
+      padding: 0.4rem 0.2rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      color: var(--muted);
+      user-select: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .segment-control input[type="radio"]:checked + label {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    .control-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--sublabel);
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      background: var(--track);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent-hi); }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    #speed-value {
+      font-size: 0.85rem;
+      color: var(--meta);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--divider);
+    }
+
+    #play-pause {
+      background: none;
+      border: 1px solid var(--btn-border);
+      color: var(--muted);
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      width: 4.5rem;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    #play-pause:hover { border-color: var(--accent); color: var(--accent-txt); }
+
+    .note-pool {
+      font-size: 0.7rem;
+      color: var(--pool);
+      letter-spacing: 0.05em;
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .quick-select {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.35rem;
+      width: 100%;
+    }
+
+    .quick-select button {
+      background: none;
+      border: 1px solid var(--btn-border);
+      color: var(--muted);
+      padding: 0.3rem 0.25rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.65rem;
+      letter-spacing: 0.04em;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .quick-select button:hover {
+      border-color: var(--accent);
+      color: var(--accent-txt);
+    }
+
+    #theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: 1px solid var(--btn-border);
+      color: var(--muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s, background 0.2s;
+    }
+
+    #theme-toggle:hover { border-color: var(--accent); color: var(--accent-txt); }
+  </style>
+</head>
+<body>
+
+  <button id="theme-toggle" title="Toggle light/dark mode">🌙</button>
+
+  <h1>Circle of Fifths</h1>
+
+  <div id="note-display">—</div>
+
+  <div class="controls">
+    <div class="control-row">
+      <div class="control-label">Interval <span id="speed-value">2.0 s</span></div>
+      <input type="range" id="speed-slider" min="0.5" max="10" step="0.5" value="2" style="flex:1">
+    </div>
+
+    <div class="control-row">
+      <div class="segment-control" style="flex:1">
+        <input type="radio" name="mode" id="mode-random" value="random">
+        <label for="mode-random">Random</label>
+        <input type="radio" name="mode" id="mode-order" value="order">
+        <label for="mode-order">In Order</label>
+      </div>
+      <button id="play-pause">Pause</button>
+    </div>
+
+    <div class="quick-select">
+      <button id="qs-all">All</button>
+      <button id="qs-none">None</button>
+      <button id="qs-first">1st Half</button>
+      <button id="qs-second">2nd Half</button>
+    </div>
+  </div>
+
+  <div id="circle-wrap">
+    <svg id="circle-svg" viewBox="-155 -155 310 310" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <script>
+    // Circle of fifths order (clockwise from top)
+    const NOTES = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'Ab', 'Eb', 'Bb', 'F'];
+    const N = NOTES.length;
+
+    function loadEnabledNotes() {
+      try {
+        const saved = localStorage.getItem('enabledNotes');
+        if (saved) {
+          const parsed = JSON.parse(saved).filter(n => NOTES.includes(n));
+          if (parsed.length > 0) return new Set(parsed);
+        }
+      } catch {}
+      return new Set(['F#', 'C#', 'G', 'D', 'A', 'E', 'B']);
+    }
+
+    function saveEnabledNotes() {
+      localStorage.setItem('enabledNotes', JSON.stringify([...enabled]));
+    }
+
+    const enabled = loadEnabledNotes();
+
+    const svg        = document.getElementById('circle-svg');
+    const noteDisplay = document.getElementById('note-display');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValue  = document.getElementById('speed-value');
+    const playPauseBtn = document.getElementById('play-pause');
+    const notePoolEl  = document.getElementById('note-pool-display');
+
+    const savedInterval = parseFloat(localStorage.getItem('interval') || '7');
+    speedSlider.value = savedInterval;
+    speedValue.textContent = savedInterval.toFixed(1) + ' s';
+    let intervalMs = savedInterval * 1000;
+    let running    = true;
+    let timer      = null;
+    let lastNote   = null;
+
+    // Mode: random or order
+    let isRandom = localStorage.getItem('mode') !== 'order';
+    let orderIndex = -1;
+    document.querySelector(`input[name="mode"][value="${isRandom ? 'random' : 'order'}"]`).checked = true;
+
+    // ── Ring track behind buttons ────────────────────────────────────────────
+    const ringTrack = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ringTrack.setAttribute('cx', 0);
+    ringTrack.setAttribute('cy', 0);
+    ringTrack.setAttribute('r', 120);
+    ringTrack.setAttribute('fill', 'none');
+    ringTrack.setAttribute('stroke-width', '1');
+    svg.appendChild(ringTrack);
+
+    function updateRingColor() {
+      const style = getComputedStyle(document.body);
+      ringTrack.setAttribute('stroke', style.getPropertyValue('--divider').trim());
+    }
+
+    // ── Build circular note buttons ──────────────────────────────────────────
+    const RING_R  = 120; // radius of the ring
+    const BTN_R   = 26;  // radius of each button circle
+
+    function polarToXY(angleDeg, r) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return [r * Math.cos(rad), r * Math.sin(rad)];
+    }
+
+    const btnEls = {};
+
+    NOTES.forEach((note, i) => {
+      const angle = i * (360 / N);
+      const [cx, cy] = polarToXY(angle, RING_R);
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.classList.add('note-btn');
+      g.dataset.note = note;
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', cx);
+      circle.setAttribute('cy', cy);
+      circle.setAttribute('r', BTN_R);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', cx);
+      text.setAttribute('y', cy);
+      text.textContent = note;
+
+      g.appendChild(circle);
+      g.appendChild(text);
+      svg.appendChild(g);
+
+      btnEls[note] = { circle, text };
+
+      g.addEventListener('click', () => toggleNote(note));
+    });
+
+    function highlightActive(note) {
+      const style  = getComputedStyle(document.body);
+      const accent = style.getPropertyValue('--accent').trim();
+      NOTES.forEach(n => {
+        const c = btnEls[n].circle;
+        if (n === note && enabled.has(n)) {
+          c.setAttribute('stroke', accent);
+          c.setAttribute('stroke-width', '3');
+        } else {
+          c.setAttribute('stroke', 'none');
+          c.setAttribute('stroke-width', '0');
+        }
+      });
+    }
+
+    function updateSliceColors() {
+      const style   = getComputedStyle(document.body);
+      const offFill = style.getPropertyValue('--slice-off').trim();
+      const onFill  = style.getPropertyValue('--slice-on').trim();
+      const textOff = style.getPropertyValue('--text-off').trim();
+      const textOn  = style.getPropertyValue('--text-on').trim();
+
+      NOTES.forEach(note => {
+        const on = enabled.has(note);
+        btnEls[note].circle.setAttribute('fill', on ? onFill : offFill);
+        btnEls[note].text.setAttribute('fill', on ? textOn : textOff);
+      });
+      if (lastNote) highlightActive(lastNote);
+      updateRingColor();
+    }
+
+    function toggleNote(note) {
+      if (enabled.has(note)) {
+        if (enabled.size === 1) return;
+        enabled.delete(note);
+      } else {
+        enabled.add(note);
+      }
+      if (lastNote && !enabled.has(lastNote)) lastNote = null;
+      orderIndex = -1;
+      saveEnabledNotes();
+      updateSliceColors();
+      updatePoolDisplay();
+    }
+
+    // ── Note cycling ────────────────────────────────────────────────────────
+    function getPool() {
+      return NOTES.filter(n => enabled.has(n));
+    }
+
+    function nextNote() {
+      const pool = getPool();
+      let note;
+      if (isRandom) {
+        let candidates = pool.filter(n => n !== lastNote);
+        if (candidates.length === 0) candidates = pool;
+        note = candidates[Math.floor(Math.random() * candidates.length)];
+      } else {
+        orderIndex = (orderIndex + 1) % pool.length;
+        note = pool[orderIndex];
+      }
+      lastNote = note;
+      return note;
+    }
+
+    function showNote() {
+      noteDisplay.classList.add('flash');
+      setTimeout(() => {
+        const note = nextNote();
+        noteDisplay.textContent = note;
+        noteDisplay.classList.remove('flash');
+        highlightActive(note);
+      }, 100);
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(showNote, intervalMs);
+    }
+
+    function updatePoolDisplay() {
+      if (notePoolEl) notePoolEl.textContent = getPool().join(' · ');
+    }
+
+    // ── Quick select ─────────────────────────────────────────────────────────
+    const FIRST_HALF  = new Set(['G', 'D', 'A', 'E', 'B', 'F#', 'C#']);
+    const SECOND_HALF = new Set(NOTES.filter(n => !FIRST_HALF.has(n)));
+
+    function applyQuickSelect(newSet) {
+      enabled.clear();
+      newSet.forEach(n => enabled.add(n));
+      if (enabled.size === 0) enabled.add(NOTES[0]); // keep at least 1
+      lastNote = null;
+      orderIndex = -1;
+      saveEnabledNotes();
+      updateSliceColors();
+      updatePoolDisplay();
+    }
+
+    document.getElementById('qs-all').addEventListener('click',    () => applyQuickSelect(new Set(NOTES)));
+    document.getElementById('qs-none').addEventListener('click',   () => applyQuickSelect(new Set()));
+    document.getElementById('qs-first').addEventListener('click',  () => applyQuickSelect(new Set(FIRST_HALF)));
+    document.getElementById('qs-second').addEventListener('click', () => applyQuickSelect(new Set(SECOND_HALF)));
+
+    // ── Mode toggle ─────────────────────────────────────────────────────────
+    document.querySelectorAll('input[name="mode"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        isRandom = radio.value === 'random';
+        orderIndex = -1;
+        localStorage.setItem('mode', isRandom ? 'random' : 'order');
+      });
+    });
+
+    // ── Controls ────────────────────────────────────────────────────────────
+    speedSlider.addEventListener('input', () => {
+      const val = parseFloat(speedSlider.value);
+      intervalMs = val * 1000;
+      speedValue.textContent = val.toFixed(1) + ' s';
+      localStorage.setItem('interval', val);
+      if (running) startTimer();
+    });
+
+    playPauseBtn.addEventListener('click', () => {
+      running = !running;
+      if (running) {
+        playPauseBtn.textContent = 'Pause';
+        showNote();
+        startTimer();
+      } else {
+        playPauseBtn.textContent = 'Play';
+        clearInterval(timer);
+      }
+    });
+
+    // ── Theme ───────────────────────────────────────────────────────────────
+    const themeBtn = document.getElementById('theme-toggle');
+
+    function getThemeCookie() {
+      const match = document.cookie.match(/(?:^|;\s*)theme=([^;]+)/);
+      return match ? match[1] : null;
+    }
+
+    function setThemeCookie(value) {
+      const expires = new Date();
+      expires.setFullYear(expires.getFullYear() + 1);
+      document.cookie = `theme=${value};expires=${expires.toUTCString()};path=/`;
+    }
+
+    const saved = getThemeCookie();
+    let isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    function applyTheme() {
+      document.body.classList.toggle('light', !isDark);
+      themeBtn.textContent = isDark ? '🌙' : '☀️';
+      requestAnimationFrame(updateSliceColors);
+    }
+
+    themeBtn.addEventListener('click', () => {
+      isDark = !isDark;
+      setThemeCookie(isDark ? 'dark' : 'light');
+      applyTheme();
+    });
+
+    // ── Init ────────────────────────────────────────────────────────────────
+    applyTheme();
+    updatePoolDisplay();
+    const firstNote = nextNote();
+    noteDisplay.textContent = firstNote;
+    highlightActive(firstNote);
+    startTimer();
+  </script>
+</body>
+</html>
