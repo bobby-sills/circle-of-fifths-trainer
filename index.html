@@ -62,10 +62,18 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
       padding: 1rem;
       transition: background 0.2s, color 0.2s;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
     }
 
     h1 {
@@ -289,43 +297,69 @@
     }
 
     #theme-toggle:hover { border-color: var(--accent); color: var(--accent-txt); }
+
+    footer {
+      padding-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      display: flex;
+      gap: 1rem;
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    footer a:hover {
+      color: var(--accent-txt);
+    }
   </style>
 </head>
 <body>
 
   <button id="theme-toggle" title="Toggle light/dark mode">🌙</button>
 
-  <h1>Circle of Fifths</h1>
+  <main>
+    <h1>Circle of Fifths</h1>
 
-  <div id="note-display">—</div>
+    <div id="note-display">—</div>
 
-  <div class="controls">
-    <div class="control-row">
-      <div class="control-label">Interval <span id="speed-value">2.0 s</span></div>
-      <input type="range" id="speed-slider" min="0.5" max="10" step="0.5" value="2" style="flex:1">
-    </div>
-
-    <div class="control-row">
-      <div class="segment-control" style="flex:1">
-        <input type="radio" name="mode" id="mode-random" value="random">
-        <label for="mode-random">Random</label>
-        <input type="radio" name="mode" id="mode-order" value="order">
-        <label for="mode-order">In Order</label>
+    <div class="controls">
+      <div class="control-row">
+        <div class="control-label">Interval <span id="speed-value">2.0 s</span></div>
+        <input type="range" id="speed-slider" min="0.5" max="10" step="0.5" value="2" style="flex:1">
       </div>
-      <button id="play-pause">Pause</button>
+
+      <div class="control-row">
+        <div class="segment-control" style="flex:1">
+          <input type="radio" name="mode" id="mode-random" value="random">
+          <label for="mode-random">Random</label>
+          <input type="radio" name="mode" id="mode-order" value="order">
+          <label for="mode-order">In Order</label>
+        </div>
+        <button id="play-pause">Pause</button>
+      </div>
+
+      <div class="quick-select">
+        <button id="qs-all">All</button>
+        <button id="qs-none">None</button>
+        <button id="qs-first">1st Half</button>
+        <button id="qs-second">2nd Half</button>
+      </div>
     </div>
 
-    <div class="quick-select">
-      <button id="qs-all">All</button>
-      <button id="qs-none">None</button>
-      <button id="qs-first">1st Half</button>
-      <button id="qs-second">2nd Half</button>
+    <div id="circle-wrap">
+      <svg id="circle-svg" viewBox="-155 -155 310 310" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
-  </div>
+  </main>
 
-  <div id="circle-wrap">
-    <svg id="circle-svg" viewBox="-155 -155 310 310" xmlns="http://www.w3.org/2000/svg"></svg>
-  </div>
+  <footer>
+    <a href="https://bobbysills.dev" target="_blank" rel="noopener">bobbysills.dev</a>
+    <a href="https://github.com/bobby-sills/circle-of-fifths-trainer" target="_blank" rel="noopener">GitHub</a>
+  </footer>
 
   <script>
     // Circle of fifths order (clockwise from top)
