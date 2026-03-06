@@ -98,6 +98,25 @@
 
     #note-display.flash { opacity: 0; }
 
+    /* Progress countdown bar */
+    .progress-track {
+      width: 100%;
+      max-width: 320px;
+      height: 3px;
+      background: var(--track);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transform-origin: left;
+      will-change: width;
+    }
+
     /* Circle of fifths SVG */
     #circle-wrap {
       width: min(260px, 80vw);
@@ -327,6 +346,8 @@
 
     <div id="note-display">—</div>
 
+    <div class="progress-track"><div id="progress-bar"></div></div>
+
     <div class="controls">
       <div class="control-row">
         <div class="control-label">Interval <span id="speed-value">2.0 s</span></div>
@@ -385,6 +406,7 @@
 
     const svg        = document.getElementById('circle-svg');
     const noteDisplay = document.getElementById('note-display');
+    const progressBar = document.getElementById('progress-bar');
     const speedSlider = document.getElementById('speed-slider');
     const speedValue  = document.getElementById('speed-value');
     const playPauseBtn = document.getElementById('play-pause');
@@ -393,10 +415,27 @@
     const savedInterval = parseFloat(localStorage.getItem('interval') || '7');
     speedSlider.value = savedInterval;
     speedValue.textContent = savedInterval.toFixed(1) + ' s';
-    let intervalMs = savedInterval * 1000;
-    let running    = true;
-    let timer      = null;
-    let lastNote   = null;
+    let intervalMs    = savedInterval * 1000;
+    let running       = true;
+    let timer         = null;
+    let lastNote      = null;
+    let noteStartTime = null;
+    let rafId         = null;
+
+    function animateProgress() {
+      if (!running || noteStartTime === null) return;
+      const elapsed  = Date.now() - noteStartTime;
+      const fraction = Math.min(elapsed / intervalMs, 1);
+      progressBar.style.width = (1 - fraction) * 100 + '%';
+      rafId = requestAnimationFrame(animateProgress);
+    }
+
+    function startProgress() {
+      noteStartTime = Date.now();
+      cancelAnimationFrame(rafId);
+      progressBar.style.width = '100%';
+      rafId = requestAnimationFrame(animateProgress);
+    }
 
     // Mode: random or order
     let isRandom = localStorage.getItem('mode') !== 'order';
@@ -521,6 +560,7 @@
     }
 
     function showNote() {
+      startProgress();
       noteDisplay.classList.add('flash');
       setTimeout(() => {
         const note = nextNote();
@@ -586,6 +626,7 @@
       } else {
         playPauseBtn.textContent = 'Play';
         clearInterval(timer);
+        cancelAnimationFrame(rafId);
       }
     });
 
@@ -624,6 +665,7 @@
     const firstNote = nextNote();
     noteDisplay.textContent = firstNote;
     highlightActive(firstNote);
+    startProgress();
     startTimer();
   </script>
 </body>
